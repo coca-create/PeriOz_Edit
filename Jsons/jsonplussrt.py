@@ -12,6 +12,9 @@ from transformers import AutoTokenizer, AutoModelForTokenClassification
 
 from Split import moz_split as sp 
 import csv
+from tab1 import tab1_func as t1
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
 
 
 
@@ -430,6 +433,7 @@ def repair(json_files, srt_files):
     srt_output_files = []
     txt_output_files = []
     txtR_output_files= []
+    XLSX_output_files= []
 
     # プログレスバーの固定コンテナを作成
   
@@ -449,9 +453,15 @@ def repair(json_files, srt_files):
             srt_output_files.append(srt_output_file)
             txt_output_files.append(txt_output_file)
             txtR_output_files.append(txtR_output_file)
+            with open(srt_output_file,"r",encoding='utf-8') as f:
+                srt_content = f.read()
+            filename=os.path.splitext(os.path.basename(srt_output_file))[0]
+            XLSX_file_path,_=t1.create_excel_from_srt_c(srt_content,filename)
+            XLSX_output_files.append(XLSX_file_path)
+
         except Exception as e:
             print(f"Error processing file set {json_file} and {srt_file}: {e}")
-
+    print(srt_output_files)
     if len(srt_output_files) > 1 :
         # ZIPファイルを生成
         timestamp_patch = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -461,6 +471,7 @@ def repair(json_files, srt_files):
         reversal_srt_zip = os.path.join(temp_dir, "reversal_srt_files.zip")
         reversal_txtNR_zip = os.path.join(temp_dir, "reversal_NR_files.zip")
         reversal_txtR_zip = os.path.join(temp_dir, "reversal_R_files.zip")
+        reversal_XLSX_zip = os.path.join(temp_dir, "reversal_XLSX_files.zip")
 
         with zipfile.ZipFile(reversal_srt_zip, 'w') as srt_zip:
             for file in srt_output_files:
@@ -471,8 +482,11 @@ def repair(json_files, srt_files):
         with zipfile.ZipFile(reversal_txtR_zip, 'w') as txt_zip:
             for file in txtR_output_files:
                 txt_zip.write(file, os.path.basename(file))
+        with zipfile.ZipFile(reversal_XLSX_zip, 'w') as xlsx_zip:
+            for file in XLSX_output_files:
+                xlsx_zip.write(file, os.path.basename(file))
 
-        return [reversal_srt_zip, reversal_txtNR_zip,reversal_txtR_zip]
+        return [reversal_srt_zip, reversal_txtNR_zip,reversal_txtR_zip,reversal_XLSX_zip]
     elif len(srt_output_files)==0:
  
         return [None,None,None]
@@ -480,6 +494,6 @@ def repair(json_files, srt_files):
     else:
         #print(srt_output_files[0])
         #print(txt_output_files[0])
-        return [srt_output_files[0], txt_output_files[0],txtR_output_files[0]]
+        return [srt_output_files[0], txt_output_files[0],txtR_output_files[0],XLSX_output_files[0]]
 
 
